@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assinatura Digital - PROJMARMORES</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8D27A;
+    --bg: #07070b;
+    --surface: #101018;
+    --border: rgba(201,168,76,0.22);
+    --text: #f0ece4;
+    --text2: #c4bdb5;
+    --muted: #6a6275;
+    --err-fg: #ff7878;
+    --ok-fg: #4ade80;
+  }
+  body {
+    margin: 0;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  h1 { font-size: 20px; text-align: center; color: var(--gold-light); margin-bottom: 4px; font-weight: 800; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 20px; text-align: center; }
+  #contrato-texto {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    color: var(--text2);
+  }
+  label { width: 100%; max-width: 500px; font-size: 14px; margin-bottom: 6px; color: var(--text2); }
+  input[type="text"] {
+    width: 100%;
+    max-width: 500px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(255,255,255,0.07);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 20px;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+  canvas {
+    width: 100%;
+    max-width: 500px;
+    height: 200px;
+    background: #fff;
+    border-radius: 14px;
+    touch-action: none;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+  .canvas-actions {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+  }
+  .btn-limpar {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+  }
+  .btn-confirmar {
+    width: 100%;
+    max-width: 500px;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    color: #1a0e00;
+    font-size: 16px;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+  }
+  .btn-confirmar:disabled { opacity: 0.5; }
+  .msg { text-align: center; margin-top: 16px; font-size: 14px; }
+  .msg.erro { color: var(--err-fg); }
+  .msg.sucesso { color: var(--ok-fg); }
+  .loading, .sucesso-tela { text-align: center; margin-top: 60px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div id="tela-loading" class="loading">
+  <p>Carregando contrato...</p>
+</div>
+
+<div id="tela-erro" class="loading hidden">
+  <p class="msg erro" id="erro-texto"></p>
+</div>
+
+<div id="tela-sucesso" class="sucesso-tela hidden">
+  <h1>✅ Assinado com sucesso!</h1>
+  <p class="subtitle" id="msg-sucesso">Obrigado, sua assinatura foi registrada.</p>
+  <a id="btn-notificar-pjm" href="#" target="_blank"
+    style="display:none;margin-top:20px;padding:14px 24px;border-radius:12px;background:#25D366;color:#fff;font-size:15px;font-weight:700;text-decoration:none;font-family:'Outfit',sans-serif;">
+    📱 Enviar confirmação para PROJMARMORES
+  </a>
+</div>
+
+<div id="tela-form" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+  <h1>Assinatura Digital</h1>
+  <p class="subtitle" id="subtitulo">PROJMARMORES</p>
+
+  <div id="contrato-texto"></div>
+
+  <label for="nome-input">Seu nome completo</label>
+  <input type="text" id="nome-input" placeholder="Digite seu nome" autocomplete="name">
+
+  <label>Assine no campo abaixo (use o dedo)</label>
+  <canvas id="signature-pad"></canvas>
+  <div class="canvas-actions">
+    <button class="btn-limpar" id="btn-limpar">Limpar</button>
+  </div>
+
+  <button class="btn-confirmar" id="btn-confirmar" disabled>Confirmar Assinatura</button>
+  <p class="msg erro hidden" id="form-erro"></p>
+</div>
+
+<script>
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const contratoId = params.get('id');
+
+  const telaLoading = document.getElementById('tela-loading');
+  const telaErro = document.getElementById('tela-erro');
+  const telaSucesso = document.getElementById('tela-sucesso');
+  const telaForm = document.getElementById('tela-form');
+  const erroTexto = document.getElementById('erro-texto');
+
+  function mostrarErro(msg) {
+    telaLoading.classList.add('hidden');
+    telaForm.classList.add('hidden');
+    erroTexto.textContent = msg;
+    telaErro.classList.remove('hidden');
+  }
+
+  if (!contratoId) {
+    mostrarErro('Link inválido: contrato não identificado.');
+    return;
+  }
+
+  fetch('/api/contrato?id=' + encodeURIComponent(contratoId))
+    .then(r => r.json().then(data => ({ ok: r.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok) throw new Error(data.error || 'Erro ao carregar contrato.');
+      if (data.assinado) {
+        telaLoading.classList.add('hidden');
+        telaSucesso.classList.remove('hidden');
+        telaSucesso.querySelector('.subtitle').textContent =
+          'Este contrato já foi assinado por ' + (data.assinante_nome || '') + '.';
+        return;
+      }
+      // Guardar info do contrato para notificação pós-assinatura
+      let _numeroOs = data.numero_os || '';
+      let _clienteNome = data.cliente_nome || '';
+
+      document.getElementById('contrato-texto').textContent = data.texto;
+      document.getElementById('subtitulo').textContent =
+        (data.cliente_nome ? data.cliente_nome + ' — ' : '') + (data.numero_os || '');
+      telaLoading.classList.add('hidden');
+      telaForm.classList.remove('hidden');
+      // Usar requestAnimationFrame para garantir que o canvas tenha dimensões corretas
+      requestAnimationFrame(() => iniciarCanvas(_numeroOs, _clienteNome));
+    })
+    .catch(err => mostrarErro(err.message || 'Erro ao carregar contrato.'));
+
+  function iniciarCanvas(numeroOs, clienteNome) {
+    const canvas = document.getElementById('signature-pad');
+    const ctx = canvas.getContext('2d');
+    const nomeInput = document.getElementById('nome-input');
+    const btnConfirmar = document.getElementById('btn-confirmar');
+    const btnLimpar = document.getElementById('btn-limpar');
+    const formErro = document.getElementById('form-erro');
+
+    let desenhando = false;
+    let temTraco = false;
+
+    function fillWhite() {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#111';
+      fillWhite();
+    }
+    resize();
+
+    function pos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+
+    function start(e) {
+      e.preventDefault();
+      desenhando = true;
+      temTraco = true;
+      const p = pos(e);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      atualizarBotao();
+    }
+    function move(e) {
+      if (!desenhando) return;
+      e.preventDefault();
+      const p = pos(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    }
+    function end() { desenhando = false; }
+
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', end);
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('mouseup', end);
+
+    btnLimpar.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      fillWhite();
+      temTraco = false;
+      atualizarBotao();
+    });
+
+    function atualizarBotao() {
+      btnConfirmar.disabled = !(temTraco && nomeInput.value.trim().length > 1);
+    }
+    nomeInput.addEventListener('input', atualizarBotao);
+
+    btnConfirmar.addEventListener('click', () => {
+      try {
+        formErro.classList.add('hidden');
+        btnConfirmar.disabled = true;
+        btnConfirmar.textContent = 'Enviando...';
+
+        // Pegar imagem diretamente do canvas principal (com fundo branco já pintado)
+        let assinaturaBase64 = '';
+        try {
+          assinaturaBase64 = canvas.toDataURL('image/jpeg', 0.6);
+        } catch (e) {
+          assinaturaBase64 = canvas.toDataURL('image/png');
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+        fetch('/api/assinar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: contratoId,
+            assinante_nome: nomeInput.value.trim(),
+            assinatura_base64: assinaturaBase64
+          }),
+          signal: controller.signal
+        })
+          .then(r => r.json().catch(() => { throw new Error('Erro ao processar resposta do servidor. (Status: ' + r.status + ')'); }).then(data => ({ ok: r.ok, data })))
+          .then(({ ok, data }) => {
+            clearTimeout(timeoutId);
+            if (!ok) throw new Error(data.error || 'Erro ao enviar assinatura.');
+            telaForm.classList.add('hidden');
+            telaSucesso.classList.remove('hidden');
+            // Montar link de notificação para PROJMARMORES (opcional - cliente toca se quiser)
+            const nomeAssinante = nomeInput.value.trim();
+            const msg = '✅ *Contrato assinado!*\n\n'
+              + '👤 Cliente: ' + (nomeAssinante || clienteNome || 'Não informado') + '\n'
+              + (numeroOs ? '📋 OS: ' + numeroOs + '\n' : '')
+              + '\nO cliente acabou de assinar o contrato digitalmente em projmarmoresapp-phi.vercel.app';
+            const btnNotif = document.getElementById('btn-notificar-pjm');
+            btnNotif.href = 'https://wa.me/5585994514804?text=' + encodeURIComponent(msg);
+            btnNotif.style.display = 'inline-block';
+          })
+          .catch(err => {
+            clearTimeout(timeoutId);
+            formErro.textContent = (err.name === 'AbortError') ? 'Tempo limite esgotado. Tente novamente.' : (err.message || 'Erro ao enviar assinatura.');
+            formErro.classList.remove('hidden');
+            btnConfirmar.disabled = false;
+            btnConfirmar.textContent = 'Confirmar Assinatura';
+          });
+      } catch (err) {
+        formErro.textContent = err.message || 'Erro ao preparar assinatura.';
+        formErro.classList.remove('hidden');
+        btnConfirmar.disabled = false;
+        btnConfirmar.textContent = 'Confirmar Assinatura';
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
