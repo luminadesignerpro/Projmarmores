@@ -86,7 +86,7 @@ async function gerarPdfOrcamento(dados, fetchLogo) {
   }
   const textX = logoImage ? MARGIN + 66 : MARGIN;
   page.drawText('PROJMARMORES', { x: textX, y: headerTop - 6, size: 19, font: fontBold, color: DARK });
-  page.drawText('projmarmores, Marmoraria e granitos', { x: textX, y: headerTop - 23, size: 8.5, font: fontRegular, color: GRAY });
+  page.drawText('Vidraçaria, Esquadrias de Alumínio e Soluções em Vidro', { x: textX, y: headerTop - 23, size: 8.5, font: fontRegular, color: GRAY });
   page.drawText('WhatsApp: (85) 99451-4804 | Instagram: @projmarmores', { x: textX, y: headerTop - 35, size: 8.5, font: fontRegular, color: GRAY });
   page.drawText('Itaitinga - CE', { x: textX, y: headerTop - 47, size: 8.5, font: fontRegular, color: GRAY });
 
