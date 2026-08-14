@@ -86,14 +86,14 @@ async function gerarPdfContrato(dados, fetchLogo) {
   }
   const textX = logoImage ? MARGIN + 66 : MARGIN;
   page.drawText('PROJMARMORES', { x: textX, y: headerTop - 6, size: 19, font: fontBold, color: DARK });
-  page.drawText('Vidraçaria, Esquadrias de Alumínio e Soluções em Vidro', { x: textX, y: headerTop - 23, size: 8.5, font: fontRegular, color: GRAY });
+  page.drawText('projmarmores, granitos e marmores', { x: textX, y: headerTop - 23, size: 8.5, font: fontRegular, color: GRAY });
   page.drawText('WhatsApp: (85) 99451-4804 | Instagram: @projmarmores', { x: textX, y: headerTop - 35, size: 8.5, font: fontRegular, color: GRAY });
-  page.drawText('Fortaleza - CE', { x: textX, y: headerTop - 47, size: 8.5, font: fontRegular, color: GRAY });
+  page.drawText('Itaitinga - CE', { x: textX, y: headerTop - 47, size: 8.5, font: fontRegular, color: GRAY });
 
   const numeroStr = `CONTRATO N° ${numero || ''}`;
   const numeroW = fontBold.widthOfTextAtSize(numeroStr, 11);
   page.drawText(numeroStr, { x: PAGE_W - MARGIN - numeroW, y: headerTop - 6, size: 11, font: fontBold, color: GOLD });
-  const dataLine = `Fortaleza - CE, ${dataStr || ''}`;
+  const dataLine = `Itaitinga - CE, ${dataStr || ''}`;
   const dataW = fontRegular.widthOfTextAtSize(dataLine, 9);
   page.drawText(dataLine, { x: PAGE_W - MARGIN - dataW, y: headerTop - 22, size: 9, font: fontRegular, color: GRAY });
 
@@ -111,7 +111,7 @@ async function gerarPdfContrato(dados, fetchLogo) {
 
   // ---------------- CAIXA QUALIFICAÇÃO ----------------
   const rows = [
-    ['CONTRATADA:', 'PROJMARMORES (Fortaleza - CE)'],
+    ['CONTRATADA:', 'PROJMARMORES (Itaitinga - CE)'],
     ['Endereço:', 'José Rebouças Lins 1895, Jabuti'],
     ['WhatsApp / Redes:', '(85) 99451-4804 | Instagram: @projmarmores'],
     ['GAP', ''],
